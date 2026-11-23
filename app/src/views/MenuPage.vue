@@ -37,13 +37,13 @@
           v-for="plat in platsFiltres"
           :key="plat.id"
           :router-link="`/tabs/menu/${plat.id}`"
-          detail="false"
+          :detail="true"
         >
           <ion-label>
             <h2>{{ plat.nom }}</h2>
             <p>{{ plat.description }}</p>
             <p>
-              <ion-text color="primary"><strong>{{ formatAriary(plat.prix) }}</strong></ion-text>
+              <ion-text color="primary"><strong>{{ formatAriary(Number(plat.prix)) }}</strong></ion-text>
               <ion-badge v-if="!plat.disponible" color="medium" class="epuise">Épuisé</ion-badge>
             </p>
           </ion-label>
@@ -66,7 +66,7 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel,
@@ -74,14 +74,16 @@ import {
   IonSegmentButton, IonRefresher, IonRefresherContent, toastController,
 } from '@ionic/vue';
 import { addCircleOutline } from 'ionicons/icons';
-import api from '@/services/api';
+import api, { ErreurApi } from '@/services/api';
 import { formatAriary } from '@/utils/format';
 import { usePanier } from '@/composables/usePanier';
-
-const plats = ref([]);
-const categories = ref([]);
+import type { Plat } from '@/types/gargote';
+import type { Categorie } from '@/types/gargote';
+import type { RefresherCustomEvent } from '@ionic/vue';
+const plats = ref<Plat[]>([]);
+const categories = ref<Categorie[]>([]);
 const chargement = ref(true);
-const erreur = ref(null);
+const erreur = ref<string | null>(null);
 const recherche = ref('');
 const categorieChoisie = ref('toutes');
 
@@ -96,22 +98,25 @@ async function charger() {
   chargement.value = true;
   erreur.value = null;
   try {
-    const id = categorieChoisie.value === 'toutes' ? null : categorieChoisie.value;
-    plats.value = await api.getPlats(id);
+    const id: string | null = categorieChoisie.value === 'toutes' ? null : categorieChoisie.value;
+    plats.value = await api.getPlats(Number(id));
   } catch (e) {
-    erreur.value = "Impossible de joindre l'API. Est-elle lancée ?";
-    console.error(e);
+    if(e instanceof ErreurApi && e.statut === 404){
+      erreur.value = "Impossible de joindre l'API. Est-elle lancée ?";
+      console.error(e);
+    }
+    
   } finally {
     chargement.value = false;
   }
 }
 
-async function rafraichir(event) {
+async function rafraichir(event:RefresherCustomEvent) {
   await charger();
   event.target.complete(); // arrête l'animation du refresher
 }
 
-async function ajouterAuPanier(plat) {
+async function ajouterAuPanier(plat:Plat) {
   ajouter(plat);
   const toast = await toastController.create({
     message: `${plat.nom} ajouté au panier`,

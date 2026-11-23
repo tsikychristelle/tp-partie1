@@ -27,7 +27,7 @@
             <p>{{ c.lignes.map((l) => `${l.quantite} × ${l.nom}`).join(', ') }}</p>
           </ion-label>
           <div slot="end" class="ion-text-end">
-            <ion-note>{{ formatAriary(c.total) }}</ion-note><br />
+            <ion-note>{{ formatAriary(Number(c.total)) }}</ion-note><br />
             <ion-badge color="warning">{{ c.statut }}</ion-badge>
           </div>
         </ion-item>
@@ -36,7 +36,7 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel,
@@ -44,8 +44,10 @@ import {
 } from '@ionic/vue';
 import api from '@/services/api';
 import { formatAriary, formatDate } from '@/utils/format';
+import type { Commande } from '@/types/gargote';
+import type { RefresherCustomEvent } from '@ionic/vue';
 
-const commandes = ref([]);
+const commandes= ref<Commande[]>([]);
 const chargement = ref(false);
 
 async function charger() {
@@ -57,7 +59,7 @@ async function charger() {
   }
 }
 
-async function rafraichir(event) {
+async function rafraichir(event:RefresherCustomEvent) {
   await charger();
   event.target.complete();
 }

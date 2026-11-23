@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { IonicVue } from '@ionic/vue';
 import App from './App.vue';
-import router from './router';
+import router from './router/index.js';
 
 /* CSS indispensable au fonctionnement des composants Ionic */
 import '@ionic/vue/css/core.css';

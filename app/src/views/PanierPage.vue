@@ -20,7 +20,7 @@
           <ion-item v-for="ligne in lignes" :key="ligne.plat.id">
             <ion-label>
               <h2>{{ ligne.plat.nom }}</h2>
-              <p>{{ formatAriary(ligne.plat.prix) }} × {{ ligne.quantite }}</p>
+              <p>{{ formatAriary(Number(ligne.plat.prix)) }} × {{ ligne.quantite }}</p>
             </ion-label>
             <ion-buttons slot="end">
               <ion-button aria-label="Retirer un" @click="changerQuantite(ligne.plat.id, -1)">
@@ -60,7 +60,8 @@
   </ion-page>
 </template>
 
-<script setup>
+
+<script setup lang="ts">
 import { ref } from 'vue';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel,
@@ -68,10 +69,10 @@ import {
   alertController, toastController, loadingController, useIonRouter,
 } from '@ionic/vue';
 import { addCircleOutline, removeCircleOutline } from 'ionicons/icons';
-import api from '@/services/api';
+import api,{ErreurApi} from '@/services/api';
 import { formatAriary } from '@/utils/format';
 import { usePanier } from '@/composables/usePanier';
-
+import type { Commande } from '@/types/gargote';
 const { lignes, changerQuantite, vider, total } = usePanier();
 const ionRouter = useIonRouter();
 
@@ -99,7 +100,7 @@ async function envoyer() {
   const chargement = await loadingController.create({ message: 'Envoi...' });
   await chargement.present();
   try {
-    const commande = await api.creerCommande({
+    const commande:Commande = await api.creerCommande({
       table: Number(table.value),
       lignes: lignes.value.map((l) => ({ plat_id: l.plat.id, quantite: l.quantite })),
     });
@@ -108,18 +109,20 @@ async function envoyer() {
     await afficherToast(`Commande n°${commande.id} envoyée`, 'success');
     ionRouter.navigate('/tabs/commandes', 'forward', 'replace');
   } catch (e) {
-    if (e.statut === 422 && e.details.table) {
-      erreurTable.value = e.details.table;
-    } else {
-      await afficherToast(e.message, 'danger');
-    }
+    if(e instanceof ErreurApi && e.statut === 422 ) {
+      if (e.statut === 422 && e.details.table) {
+        erreurTable.value = e.details.table;
+      } else {
+        await afficherToast(e.message, 'danger');
+      }
+  }
   } finally {
     await chargement.dismiss();
     envoi.value = false;
   }
 }
 
-async function afficherToast(message, color) {
+async function afficherToast(message:string, color:string) {
   const toast = await toastController.create({ message, color, duration: 2500, position: 'top' });
   await toast.present();
 }

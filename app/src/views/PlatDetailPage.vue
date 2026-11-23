@@ -15,12 +15,12 @@
 
       <ion-card v-if="plat">
         <ion-card-header>
-          <ion-card-subtitle>{{ plat.categorie.nom }}</ion-card-subtitle>
+          <ion-card-subtitle>{{ plat.categorie?.nom }}</ion-card-subtitle>
           <ion-card-title>{{ plat.nom }}</ion-card-title>
         </ion-card-header>
         <ion-card-content>
           <p>{{ plat.description }}</p>
-          <h2 class="prix">{{ formatAriary(plat.prix) }}</h2>
+          <h2 class="prix">{{ formatAriary(Number(plat.prix)) }}</h2>
           <ion-badge v-if="!plat.disponible" color="medium">Épuisé</ion-badge>
         </ion-card-content>
       </ion-card>
@@ -33,7 +33,7 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import {
@@ -42,7 +42,7 @@ import {
   IonButton, IonIcon, IonSpinner, IonText, useIonRouter,
 } from '@ionic/vue';
 import { cartOutline } from 'ionicons/icons';
-import api from '@/services/api';
+import api, { ErreurApi } from '@/services/api';
 import { formatAriary } from '@/utils/format';
 import { usePanier } from '@/composables/usePanier';
 
@@ -50,19 +50,28 @@ const route = useRoute();
 const ionRouter = useIonRouter();
 const { ajouter } = usePanier();
 
-const plat = ref(null);
-const erreur = ref(null);
+import type { Plat } from '@/types/gargote';
+
+const plat = ref<Plat | null>(null);
+const erreur = ref<string | null>(null);
 
 onMounted(async () => {
+  
   try {
-    plat.value = await api.getPlat(route.params.id);
+    if(!plat.value)return ;
+    plat.value = await api.getPlat(Number(route.params.id));
   } catch (e) {
-    erreur.value = e.statut === 404 ? "Ce plat n'existe pas." : "Impossible de charger le plat.";
+    if(e instanceof ErreurApi && e.statut===404){
+      erreur.value = "Ce plat n'existe pas.";
+    }
+    
   }
 });
 
 function ajouterEtRevenir() {
-  ajouter(plat.value);
+  if(plat.value){
+    ajouter(plat.value);
+  }
   ionRouter.back(); // retour au menu, avec l'animation de retour
 }
 </script>

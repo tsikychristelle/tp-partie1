@@ -1,11 +1,12 @@
+import type { LignePanier,Plat } from '@/types/gargote';
 import { ref, computed } from 'vue';
 
 // L'état est déclaré EN DEHORS de la fonction :
 // toutes les pages qui appellent usePanier() partagent le même panier.
-const lignes = ref([]); // [{ plat, quantite }]
+const lignes = ref<LignePanier[]>([]); // [{ plat, quantite }]
 
 export function usePanier() {
-  function ajouter(plat) {
+  function ajouter(plat:Plat) {
     const ligne = lignes.value.find((l) => l.plat.id === plat.id);
     if (ligne) {
       ligne.quantite++;
@@ -14,7 +15,7 @@ export function usePanier() {
     }
   }
 
-  function changerQuantite(platId, delta) {
+  function changerQuantite(platId:number , delta:number) {
     const ligne = lignes.value.find((l) => l.plat.id === platId);
     if (!ligne) return;
     ligne.quantite += delta;
@@ -28,7 +29,7 @@ export function usePanier() {
   }
 
   const nombreArticles = computed(() => lignes.value.reduce((n, l) => n + l.quantite, 0));
-  const total = computed(() => lignes.value.reduce((t, l) => t + l.plat.prix * l.quantite, 0));
+  const total = computed(() => lignes.value.reduce((t, l) => t + Number(l.plat.prix) * l.quantite, 0));
 
   return { lignes, ajouter, changerQuantite, vider, nombreArticles, total };
 }
