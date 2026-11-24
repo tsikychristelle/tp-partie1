@@ -21,6 +21,7 @@
         <ion-card-content>
           <p>{{ plat.description }}</p>
           <h2 class="prix">{{ formatAriary(Number(plat.prix)) }}</h2>
+          <p v-if="riz">Avec du riz : {{ formatAriary(Number(plat.prix) + Number(riz.prix)) }}</p>
           <ion-badge v-if="!plat.disponible" color="medium">Épuisé</ion-badge>
         </ion-card-content>
       </ion-card>
@@ -49,23 +50,27 @@ import { usePanier } from '@/composables/usePanier';
 const route = useRoute();
 const ionRouter = useIonRouter();
 const { ajouter } = usePanier();
-
+const riz = ref<Plat | null>(null);
 import type { Plat } from '@/types/gargote';
 
 const plat = ref<Plat | null>(null);
 const erreur = ref<string | null>(null);
 
 onMounted(async () => {
-  
+  plat.value = null;
+  erreur.value = null;
+
   try {
-    if(!plat.value)return ;
     plat.value = await api.getPlat(Number(route.params.id));
   } catch (e) {
-    if(e instanceof ErreurApi && e.statut===404){
+    if (e instanceof ErreurApi && e.statut === 404) {
       erreur.value = "Ce plat n'existe pas.";
+    } else {
+      erreur.value = "Impossible de charger ce plat.";
+      console.error(e);
     }
-    
   }
+  riz.value = await api.getPlat(7);
 });
 
 function ajouterEtRevenir() {

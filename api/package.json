@@ -6,5 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "start:v2": "node server.js --v2"
+  },
+  "dependencies": {
+    "@capacitor/preferences": "^8.0.1"
   }
 }
